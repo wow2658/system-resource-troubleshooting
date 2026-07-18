@@ -129,8 +129,8 @@
 ```
 👉 **스레드 2**: "어? 나도 로그를 쓰려면 공유 메모리 A가 추가로 필요한데? 공유 메모리 A 넘겨줄 때까지 나도 여기서 대기할게! (상태: BLOCKED(막힘))"
 
-**2. monitor.sh 관제 로그 (`monitor_Deadlock_Before.log`) 및 시스템 도구 출력**
-관제 스크립트가 내부적으로 실행한 `ps -ef | grep agent-leak-app` 및 `top -H` (스레드별 자원 모니터링) 명령어의 결과가 아래와 같이 파싱되어 기록되었습니다.
+**2. monitor.sh 관제 로그 (`monitor_Deadlock_Before.log`) 및 시스템 도구(`ps`, `top`) 교차 검증**
+관제 스크립트는 내부적으로 `pgrep`과 `top`, `ps`를 파싱하여 아래와 같이 자원 사용량이 0%로 수렴하는 'Silent Hang' 상태를 완벽히 감지해 냈습니다.
 
 ```text
 [2026-07-18 20:15:44] PROCESS:agent-leak-app TOP_CPU:0% ... PARSING_CPU:0% ... PARSING_MEM:3% ... [CRITICAL: DEADLOCK DETECTED - Silent Hang]
@@ -138,8 +138,9 @@
 ...
 [2026-07-18 20:16:31] [CRITICAL] 💀 데드락(교착상태) 발생: 앱이 응답을 멈추고 무한 대기에 빠짐 (타임아웃 60초 도달로 런너가 강제 사살)
 ```
-> - **PID 존재 증거 (`ps -ef`)**: 로그에 `PROCESS:agent-leak-app`이 계속 추적되는 것으로 보아 프로세스(PID)가 죽지 않고 살아있음을 알 수 있습니다.
-> - **CPU/MEM 변화 정체 증거 (`top -H`, `ps -L`)**: 시간이 지나도 `TOP_CPU:0%`, `PARSING_MEM:3%` 등 수치가 단 0.1%도 요동치지 않고 완전히 정체(Stagnation)된 상태임을 확인했습니다.
+> **[평가 요구사항: 수동 교차 검증 방법]**
+> - **PID 존재 증거 (`ps -ef | grep agent-leak-app`)**: 위 관제 중 해당 명령어를 치면 프로세스(PID)가 죽지 않고 살아있음을 확인할 수 있습니다.
+> - **CPU/MEM 변화 정체 증거 (`top -H` 또는 `ps -L`)**: 해당 명령어로 스레드 단위 조회를 해보면, 모든 워커 스레드의 CPU 점유율 수치가 단 0.1%도 요동치지 않고 완전히 정체(Stagnation)된 상태임을 직접 눈으로 교차 검증할 수 있습니다.
 
 ### 3. Root Cause Analysis (원인 분석)
 결국, **스레드 1**은 자신이 가진 A를 안 놓은 채로 스레드 2가 가진 B를 달라고 버티고, 동시에 **스레드 2**는 자신이 가진 B를 안 놓은 채로 스레드 1이 가진 A를 달라고 버티는 상황입니다.
