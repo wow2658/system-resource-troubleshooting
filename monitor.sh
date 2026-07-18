@@ -51,10 +51,20 @@ if ! ss -tuln | grep -q ":15034"; then
     exit 1
 fi
 
-# 3. 방화벽 점검 (경고)
+# [보안] 시크릿 키 권한 점검
 WARN_MSG=""
-if ! ufw status 2>/dev/null | grep -qw "active"; then 
-    WARN_MSG="$WARN_MSG  [WARNING: UFW Inactive]"
+if [ -f "/home/agentuser/agent_home/api_keys/secret.key" ]; then
+    KEY_PERM=$(stat -c "%A" "/home/agentuser/agent_home/api_keys/secret.key")
+    if [ "$KEY_PERM" != "-r--------" ]; then
+        WARN_MSG="$WARN_MSG [WARNING: Key Permission is not 400 ($KEY_PERM)]"
+    fi
+fi
+
+# 3. 방화벽 점검 (상태 표시)
+if ! sudo ufw status 2>/dev/null | grep -qw "active"; then 
+    WARN_MSG="$WARN_MSG [WARNING: UFW Inactive]"
+else
+    WARN_MSG="$WARN_MSG [UFW Active]"
 fi
 
 # 4. 자원 수집 (시스템 명령어의 출력물에서 불필요한 문자를 제거하고 순수 '수치'만 정밀하게 파싱)

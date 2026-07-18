@@ -25,6 +25,7 @@ Write-Output "==================================================================
 # ` (백틱)   : 파워쉘에서 "명령어가 너무 기니까 아랫줄로 계속 이어집니다"를 뜻하는 줄바꿈 연장 기호
 
 docker run --rm `
+  --cap-add=NET_ADMIN --cap-add=NET_RAW `
   -v "${PWD}\logs:/var/log/agent-app" `
   -v "${PWD}\run_tests.sh:/home/agentuser/run_tests.sh" `
   -v "${PWD}\monitor.sh:/home/agentuser/monitor.sh" `

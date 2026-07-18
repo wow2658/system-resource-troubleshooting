@@ -55,6 +55,12 @@ run_scenario() {
     # 앱이 부팅되고 포트를 개방할 때까지 약 1~2초가 소요되므로 대기한다.
     sleep 2
     
+    # 5-1. [UFW 활성화] 방화벽 켜기 (비밀번호 없이 sudo 가능)
+    sudo ufw --force enable >/dev/null 2>&1
+    
+    # 5-2. [보안] 시크릿 키 권한 설정 (400)
+    chmod 400 /home/agentuser/agent_home/api_keys/secret.key 2>/dev/null
+    
     # 6. 모니터링 스크립 백그라운드 실행
     run_monitor &
     
@@ -72,10 +78,12 @@ run_scenario() {
                 echo "Timeout reached ($timeout_secs secs). Killing app..."
                 NOW=$(date "+%Y-%m-%d %H:%M:%S")
                 if [[ "$scenario_name" == *"Deadlock_Before"* ]]; then
-                    echo "[$NOW] [CRITICAL] 💀 지정된 타임아웃($timeout_secs초) 도달: 프로세스가 연산을 멈추고 무한 대기(Deadlock) 상태에 빠져 강제 사살함! (방어 실패 증명)"
+                    MSG="[$NOW] [CRITICAL] 💀 데드락(교착상태) 발생: 앱이 응답을 멈추고 무한 대기에 빠짐 (타임아웃 ${timeout_secs}초 도달로 런너가 강제 사살)"
                 else
-                    echo "[$NOW] [SUCCESS] 🎯 지정된 타임아웃($timeout_secs초) 도달! 앱이 뻗지 않고 무사히 생존했습니다. (방어 성공)"
+                    MSG="[$NOW] [SUCCESS] 🎯 지정된 타임아웃(${timeout_secs}초) 도달! 앱이 뻗지 않고 무사히 생존했습니다. (방어 성공)"
                 fi
+                echo "$MSG"
+                echo "$MSG" >> "$AGENT_LOG_DIR/monitor.log"
                 pkill -9 -f agent-leak-app 2>/dev/null
                 timeout_triggered=1
                 break
@@ -86,18 +94,22 @@ run_scenario() {
         if [ $timeout_triggered -eq 0 ]; then
             NOW=$(date "+%Y-%m-%d %H:%M:%S")
             if [[ "$scenario_name" == *"CPU_Before"* ]]; then
-                echo "[$NOW] [CRITICAL] 💀 앱 강제 종료됨: 내부 하드코딩된 '자결 임계점(CPU 50% 초과)'을 넘어서 Watchdog이 사살함! (관제 스크립트의 20% 경고와 다름)"
+                MSG="[$NOW] [CRITICAL] 💀 앱 강제 종료됨: 내부 하드코딩된 '자결 임계점(CPU 50% 초과)'을 넘어서 Watchdog이 사살함! (관제 스크립트의 20% 경고와 다름)"
+                echo "$MSG"
             elif [[ "$scenario_name" == *"OOM_Before"* ]]; then
-                echo "[$NOW] [CRITICAL] 💀 앱 강제 종료됨: 내부 파라미터로 주입된 '자결 임계점(MEMORY ${mem}MB 초과)'을 넘어서 자결함! (관제 스크립트의 80% 경고와 다름)"
+                MSG="[$NOW] [CRITICAL] 💀 앱 강제 종료됨: 내부 파라미터로 주입된 '자결 임계점(MEMORY ${mem}MB 초과)'을 넘어서 자결함! (관제 스크립트의 80% 경고와 다름)"
+                echo "$MSG"
             else
-                echo "[$NOW] [CRITICAL] 💀 앱 강제 종료됨: 도커(Docker) 컨테이너의 '물리적 메모리 한계(120MB)'를 초과하여 OS OOM Killer가 사살함!"
+                MSG="[$NOW] [CRITICAL] 💀 앱 강제 종료됨: 도커(Docker) 컨테이너의 '물리적 메모리 한계(120MB)'를 초과하여 OS OOM Killer가 사살함!"
+                echo "$MSG"
             fi
         fi
     else
         wait $APP_PID 2>/dev/null
         NOW=$(date "+%Y-%m-%d %H:%M:%S")
         if [[ "$scenario_name" == *"OOM_Before"* ]]; then
-            echo "[$NOW] [CRITICAL] 💀 앱 강제 종료됨: 내부 파라미터로 주입된 '자결 임계점(MEMORY ${mem}MB 초과)'을 넘어서 자결함! (관제 스크립트의 80% 경고와 다름)"
+            MSG="[$NOW] [CRITICAL] 💀 앱 강제 종료됨: 내부 파라미터로 주입된 '자결 임계점(MEMORY ${mem}MB 초과)'을 넘어서 자결함! (관제 스크립트의 80% 경고와 다름)"
+            echo "$MSG"
         fi
     fi
     
@@ -128,7 +140,7 @@ echo "Starting tests..."
 # 1. CPU Spike (Before)
 # [시행착오 노트] 데드락이나 OOM이 꼬이지 않도록 다른 변수들은 안전치(Memory 512, Thread 0)로 고정한다.
 # CPU 사용률만 80%로 높게 잡아, 50% 초과 시 발동하는 Watchdog 강제 종료(SIGTERM) 로직을 순수하게 유도한다. (90초 타임아웃)
-run_scenario "CPU_Before" 512 80 0 90
+# run_scenario "CPU_Before" 512 80 0 90
 
 # 1-1. CPU Spike (After)
 # CPU 사용 제한을 40%로 낮춰 Watchdog 임계점(50%)을 회피하고 생존 확인 (60초 타임아웃)
@@ -139,15 +151,15 @@ run_scenario "CPU_Before" 512 80 0 90
 # run_scenario "OOM_Before" 60 40 0 0
 
 # 2-1. OOM Crash (After)
-# 메모리를 512MB로 늘려 생존 시간 증가 확인 (60초 타임아웃)
-# run_scenario "OOM_After" 512 40 0 60
+# 메모리를 512MB로 늘려 생존 시간 증가 확인 (180초 타임아웃)
+# run_scenario "OOM_After" 512 40 0 180
 
 # 3. Deadlock (Before)
 # [시행착오 노트] CPU는 안전하게 40%로 낮춰 주고, 멀티스레드(1)를 활성화하여 완벽한 원형 대기(Circular Wait) 교착상태를 유도한다.
-# run_scenario "Deadlock_Before" 512 40 1 30
+# run_scenario "Deadlock_Before" 512 40 1 60
 
 # 3-1. Deadlock (After)
 # 멀티스레드 해제(0)하여 스레드 순차 실행함으로써 데드락 회피 및 정상 동작 확인 (60초 타임아웃)
-# run_scenario "Deadlock_After" 512 40 0 60
+run_scenario "Deadlock_After" 512 40 0 60
 
 echo "All tests completed."

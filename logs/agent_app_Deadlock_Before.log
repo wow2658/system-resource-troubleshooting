@@ -1,0 +1,56 @@
+2026-07-18 20:15:29,208 [INFO] [SafetyGuard] Process priority lowered (nice=10).
+>>> Starting Agent Boot Sequence...
+[1/6] Checking User Account               [OK]
+   ... Running as service user 'agentuser' (uid=1000)
+[2/6] Verifying Environment Variables     [OK]
+   ... All required Envs correct
+[3/6] Checking Required Files             [OK]
+   ... Verified 'secret.key' with correct key string.
+[4/6] Checking Port Availability          [OK]
+   ... Port 15034 is available.
+[5/6] Verifying Log Permission            [OK]
+   ... Log directory is writable: /var/log/agent-app
+[6/6] Verifying Mission Environment       [OK]
+   ... MEMORY_LIMIT=512MB, CPU_MAX_OCCUPY=40%, MULTI_THREAD_ENABLE=True
+------------------------------------------------------------
+All Boot Checks Passed!
+Agent READY
+2026-07-18 20:15:29,208 [INFO] [SafetyGuard] Process priority lowered (nice=10).
+2026-07-18 20:15:29,209 [INFO] Agent listening at port 15034
+2026-07-18 20:15:29,209 [INFO] Agent listening at port 15034
+2026-07-18 20:15:31,221 [WARNING] [AgentWorker] Initializing concurrent transaction processors...
+
+==================================================
+ [ Agent Initiate ] Resource Check 
+==================================================
+ [ MEMORY ] Limit: 512MB 		[ OK ]
+ [ CPU    ] Limit: 40%  		[ OK ]
+ [ THREAD ] Concurrency: True 		[ WARNING ]
+--------------------------------------------------
+ >>> SYSTEM WARNING: POTENTIAL DEADLOCK IN CONCURRENT MODE.
+==================================================
+
+2026-07-18 20:15:31,221 [WARNING] [AgentWorker] Initializing concurrent transaction processors...
+2026-07-18 20:15:31,223 [WARNING] [System] CAUTION: Strict resource locking is enabled.
+2026-07-18 20:15:31,223 [WARNING] [System] CAUTION: Strict resource locking is enabled.
+2026-07-18 20:15:36,249 [INFO] [Worker-Thread-1] Process Started. Attempting to lock [Shared_Memory_A]...
+2026-07-18 20:15:36,249 [INFO] [Worker-Thread-1] Process Started. Attempting to lock [Shared_Memory_A]...
+2026-07-18 20:15:36,249 [INFO] [AgentWorker][Worker-Thread-2] Process Started. Attempting to lock [Socket_Pool_B]...
+2026-07-18 20:15:36,249 [INFO] [AgentWorker][Worker-Thread-2] Process Started. Attempting to lock [Socket_Pool_B]...
+2026-07-18 20:15:36,249 [INFO] [AgentWorker] Waiting for worker threads to complete transactions...
+2026-07-18 20:15:36,251 [INFO] [AgentWorker][Worker-Thread-1] LOCK ACQUIRED: [Shared_Memory_A]. (Holding...)
+2026-07-18 20:15:36,251 [INFO] [AgentWorker][Worker-Thread-1] LOCK ACQUIRED: [Shared_Memory_A]. (Holding...)
+2026-07-18 20:15:36,252 [INFO] [AgentWorker][Worker-Thread-2] LOCK ACQUIRED: [Socket_Pool_B]. (Holding...)
+2026-07-18 20:15:36,252 [INFO] [AgentWorker][Worker-Thread-2] LOCK ACQUIRED: [Socket_Pool_B]. (Holding...)
+2026-07-18 20:15:36,255 [INFO] [AgentWorker][Worker-Thread-1] Processing critical data in Memory A...
+2026-07-18 20:15:36,255 [INFO] [AgentWorker][Worker-Thread-1] Processing critical data in Memory A...
+2026-07-18 20:15:36,257 [INFO] [AgentWorker][Worker-Thread-2] Establishing network connections in Pool B...
+2026-07-18 20:15:36,257 [INFO] [AgentWorker][Worker-Thread-2] Establishing network connections in Pool B...
+2026-07-18 20:15:38,268 [INFO] [AgentWorker][Worker-Thread-1] Need resource [Socket_Pool_B] to finish job.
+2026-07-18 20:15:38,268 [INFO] [AgentWorker][Worker-Thread-1] Need resource [Socket_Pool_B] to finish job.
+2026-07-18 20:15:38,270 [INFO] [AgentWorker][Worker-Thread-1] WAITING for [Socket_Pool_B]... (Status: BLOCKED)
+2026-07-18 20:15:38,270 [INFO] [AgentWorker][Worker-Thread-1] WAITING for [Socket_Pool_B]... (Status: BLOCKED)
+2026-07-18 20:15:38,272 [INFO] [AgentWorker][Worker-Thread-2] Need resource [Shared_Memory_A] to write logs.
+2026-07-18 20:15:38,272 [INFO] [AgentWorker][Worker-Thread-2] Need resource [Shared_Memory_A] to write logs.
+2026-07-18 20:15:38,274 [INFO] [AgentWorker][Worker-Thread-2] WAITING for [Shared_Memory_A]... (Status: BLOCKED)
+2026-07-18 20:15:38,274 [INFO] [AgentWorker][Worker-Thread-2] WAITING for [Shared_Memory_A]... (Status: BLOCKED)
