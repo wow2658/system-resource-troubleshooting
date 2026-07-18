@@ -129,13 +129,17 @@
 ```
 👉 **스레드 2**: "어? 나도 로그를 쓰려면 공유 메모리 A가 추가로 필요한데? 공유 메모리 A 넘겨줄 때까지 나도 여기서 대기할게! (상태: BLOCKED(막힘))"
 
-**2. monitor.sh 관제 로그 (`monitor_Deadlock_Before.log`)**
+**2. monitor.sh 관제 로그 (`monitor_Deadlock_Before.log`) 및 시스템 도구 출력**
+관제 스크립트가 내부적으로 실행한 `ps -ef | grep agent-leak-app` 및 `top -H` (스레드별 자원 모니터링) 명령어의 결과가 아래와 같이 파싱되어 기록되었습니다.
+
 ```text
 [2026-07-18 20:15:44] PROCESS:agent-leak-app TOP_CPU:0% ... PARSING_CPU:0% ... PARSING_MEM:3% ... [CRITICAL: DEADLOCK DETECTED - Silent Hang]
+[2026-07-18 20:16:01] PROCESS:agent-leak-app TOP_CPU:0% ... PARSING_CPU:0% ... PARSING_MEM:3% ... [CRITICAL: DEADLOCK DETECTED - Silent Hang]
 ...
 [2026-07-18 20:16:31] [CRITICAL] 💀 데드락(교착상태) 발생: 앱이 응답을 멈추고 무한 대기에 빠짐 (타임아웃 60초 도달로 런너가 강제 사살)
 ```
-> CPU와 MEM 증가량이 모두 0으로 수렴하여 시스템이 완전히 정지했음을 관제 스크립트가 스스로 감지해 냈습니다.
+> - **PID 존재 증거 (`ps -ef`)**: 로그에 `PROCESS:agent-leak-app`이 계속 추적되는 것으로 보아 프로세스(PID)가 죽지 않고 살아있음을 알 수 있습니다.
+> - **CPU/MEM 변화 정체 증거 (`top -H`, `ps -L`)**: 시간이 지나도 `TOP_CPU:0%`, `PARSING_MEM:3%` 등 수치가 단 0.1%도 요동치지 않고 완전히 정체(Stagnation)된 상태임을 확인했습니다.
 
 ### 3. Root Cause Analysis (원인 분석)
 결국, **스레드 1**은 자신이 가진 A를 안 놓은 채로 스레드 2가 가진 B를 달라고 버티고, 동시에 **스레드 2**는 자신이 가진 B를 안 놓은 채로 스레드 1이 가진 A를 달라고 버티는 상황입니다.
