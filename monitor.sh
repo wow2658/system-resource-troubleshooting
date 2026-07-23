@@ -225,7 +225,22 @@ if [ "$DISK_USAGE" -gt 80 ]; then WARN_MSG="$WARN_MSG [WARNING: DISK High]"; fi
 
 
 
-    SUMMARY_LINE="[$NOW] PROCESS:agent-leak-app TOP_CPU:${TOP_PROC_CPU}% PS_CPU:${PS_PROC_CPU}% PARSING_CPU:${APP_CPU_PCT}% TOP_MEM:${TOP_PROC_MEM}%(${PS_PROC_RSS_MB}MB) PS_MEM:${PS_PROC_MEM}%(${PS_PROC_RSS_MB}MB) PARSING_MEM:${APP_MEM_PCT}%(${APP_MEM_MB}MB) DISK:${DISK_USAGE}%(${DISK_USED_SIZE}) $WARN_MSG"
+    # =========================================================================
+    # [유저 실험용: 스레드 단위(Thread-level) 정밀 관찰 코드 개선]
+    # 위에서 설명한 "단일 행(Single-line) 포맷" 철학을 깨지 않으면서도 스레드를 관찰하기 위해,
+    # ps -L의 결과를 가로로 예쁘게 파싱하되, 어려운 커널 용어(futex)를 직관적으로 번역합니다.
+    # =========================================================================
+    THREAD_INFO=$(ps -L -p $PID -o lwp,stat,wchan:15 --sort=-pcpu --no-headers | head -n 3 | awk '{
+        if($3 ~ /futex/) {
+            printf "TID:%s(🛑LOCK_WAIT) ", $1
+        } else if($2 ~ /R/) {
+            printf "TID:%s(🏃RUNNING) ", $1
+        } else {
+            printf "TID:%s(STAT:%s,WCHAN:%s) ", $1, $2, $3
+        }
+    }')
+
+    SUMMARY_LINE="[$NOW] PROCESS:agent-leak-app TOP_CPU:${TOP_PROC_CPU}% PS_CPU:${PS_PROC_CPU}% PARSING_CPU:${APP_CPU_PCT}% TOP_MEM:${TOP_PROC_MEM}%(${PS_PROC_RSS_MB}MB) PS_MEM:${PS_PROC_MEM}%(${PS_PROC_RSS_MB}MB) PARSING_MEM:${APP_MEM_PCT}%(${APP_MEM_MB}MB) DISK:${DISK_USAGE}%(${DISK_USED_SIZE}) [THREADS: ${THREAD_INFO}] $WARN_MSG"
 
     if [ $is_deadlock -eq 1 ]; then
         echo "$SUMMARY_LINE [CRITICAL: DEADLOCK DETECTED - Silent Hang]" >> $LOG_FILE
