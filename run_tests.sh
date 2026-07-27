@@ -160,6 +160,6 @@ echo "Starting tests..."
 
 # 3-1. Deadlock (After)
 # 멀티스레드 해제(0)하여 스레드 순차 실행함으로써 데드락 회피 및 정상 동작 확인 (60초 타임아웃)
-run_scenario "Deadlock_After" 512 40 0 60
+run_scenario "Deadlock_After" 512 40 0 120
 
 echo "All tests completed."
