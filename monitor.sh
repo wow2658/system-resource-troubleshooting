@@ -24,7 +24,21 @@ NOW=$(date "+%Y-%m-%d %H:%M:%S")
 # - .* (정규표현식 와일드카드): 점(.)은 '아무 글자 1개', 별(*)은 '바로 앞 글자가 0번 이상 반복됨'을 뜻한다.
 #   즉, 두 개가 합쳐진 '.*'는 "중간에 어떤 문자가 길게 끼어있든 다 무시하고 퉁치겠다"는 윈도우/쉘의 '*' 와일드카드와 완벽히 같은 역할을 한다.
 # - -n 1 (number): 결과가 여러 개 나올 경우 맨 위에서 1줄만 자름
-PID=$(pgrep -f "agent.*app" | tail -n 1)
+# 1. 프로세스 생존 점검
+# 부모 스크립트(run_tests.sh)가 넘겨준 PID($1)가 있다면 그걸 기반으로 찾는다.
+# 단, 패키징된 앱(PyInstaller 등)은 부모(껍데기)와 자식(알맹이) 2개가 뜰 수 있으므로 자식을 찾는다.
+if [ -n "$1" ]; then
+    PARENT_PID=$1
+    # 부모의 자식 프로세스가 있는지 검색 (가장 마지막 자식 1개)
+    CHILD_PID=$(pgrep -P $PARENT_PID | tail -n 1)
+    if [ -n "$CHILD_PID" ]; then
+        PID=$CHILD_PID
+    else
+        PID=$PARENT_PID
+    fi
+else
+    PID=$(pgrep -f "agent.*app" | tail -n 1)
+fi
 
 # - [ -z ]: zero의 약자. 변수("$PID") 안에 들어있는 문자열의 길이가 0인지(비어있는지) 검사
 if [ -z "$PID" ]; then 
@@ -92,6 +106,19 @@ if [ -z "$PS_PROC_CPU" ]; then PS_PROC_CPU="0.0"; fi
 if [ -z "$PS_PROC_MEM" ]; then PS_PROC_MEM="0.0"; fi
 if [ -z "$PS_PROC_RSS_KB" ]; then PS_PROC_RSS_KB=0; fi
 PS_PROC_RSS_MB=$((PS_PROC_RSS_KB / 1024))
+
+# [NEW] 환경변수 MEMORY_LIMIT 기반 명시적 %MEM 환산
+if [ -n "$MEMORY_LIMIT" ] && [ "$MEMORY_LIMIT" -gt 0 ]; then
+    LIMIT_MB=$MEMORY_LIMIT
+else
+    LIMIT_MB=$(free -m | awk '/^Mem:/{print $2}')
+fi
+# 만약 0.0보다 작은 .x 형식으로 나오면 앞에 0을 붙여주기 위해 bc 팁 사용 (0% 방지)
+# scale=4를 주어 중간 나눗셈에서 소수점이 잘려나가지 않게 방지합니다.
+CALC_REAL_MEM_PCT=$(printf "%.1f" "$(echo "scale=4; $PS_PROC_RSS_MB * 100 / $LIMIT_MB" | bc -l)")
+
+# [USER REQUEST] %mem * 16GB / LIMIT_MB 계산 (반올림 오차 포함)
+USER_CALC_PCT=$(printf "%.1f" "$(echo "scale=4; $PS_PROC_MEM * 16384 / $LIMIT_MB" | bc -l)")
 
 # [APP] 앱 전용 자원 및 내부 임계치 대비 사용률(%) - Hybrid 관제 파싱 기법 적용!
 # OS의 top 명령어는 스텔스 로드에 속아 0%를 반환하므로, agent_app.log 파일에서 앱이 주장하는 '순수 내부 수치'를 직접 긁어옵니다.
@@ -240,7 +267,7 @@ if [ "$DISK_USAGE" -gt 80 ]; then WARN_MSG="$WARN_MSG [WARNING: DISK High]"; fi
         }
     }')
 
-    SUMMARY_LINE="[$NOW] PROCESS:agent-leak-app TOP_CPU:${TOP_PROC_CPU}% PS_CPU:${PS_PROC_CPU}% PARSING_CPU:${APP_CPU_PCT}% TOP_MEM:${TOP_PROC_MEM}%(${PS_PROC_RSS_MB}MB) PS_MEM:${PS_PROC_MEM}%(${PS_PROC_RSS_MB}MB) PARSING_MEM:${APP_MEM_PCT}%(${APP_MEM_MB}MB) DISK:${DISK_USAGE}%(${DISK_USED_SIZE}) [THREADS: ${THREAD_INFO}] $WARN_MSG"
+    SUMMARY_LINE="[$NOW] PROCESS:agent-leak-app TOP_CPU:${TOP_PROC_CPU}% PS_CPU:${PS_PROC_CPU}% PARSING_CPU:${APP_CPU_PCT}% RES_MB:${PS_PROC_RSS_MB}MB PARSING_MB:${APP_MEM_MB}MB RES_PCT:${CALC_REAL_MEM_PCT}% USER_PCT:${USER_CALC_PCT}% PARSING_PCT:${APP_MEM_PCT}% TOP_MEM:${TOP_PROC_MEM}% OS_MEM_PCT:${PS_PROC_MEM}% DISK:${DISK_USAGE}%(${DISK_USED_SIZE}) [THREADS: ${THREAD_INFO}] $WARN_MSG"
 
     if [ $is_deadlock -eq 1 ]; then
         echo "$SUMMARY_LINE [CRITICAL: DEADLOCK DETECTED - Silent Hang]" >> $LOG_FILE
