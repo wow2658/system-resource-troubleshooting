@@ -8,7 +8,7 @@ mkdir -p $AGENT_LOG_DIR
 run_monitor() {
     # 3초마다 monitor.sh 실행
     while true; do
-        ./monitor.sh
+        ./monitor.sh $APP_PID
         # 에러 발생 시 종료
         if [ $? -ne 0 ]; then
             break
