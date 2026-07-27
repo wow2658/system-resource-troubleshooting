@@ -1,3 +1,0 @@
-[2026-07-18 19:59:38] PROCESS:agent-leak-app TOP_CPU:0% PS_CPU:3.0% PARSING_CPU:0% TOP_MEM:0.0%(42MB) PS_MEM:0.1%(42MB) PARSING_MEM:41%(25MB) DISK:1%(2.1G)  [UFW Active]
-[2026-07-18 19:59:42] PROCESS:agent-leak-app TOP_CPU:0% PS_CPU:1.5% PARSING_CPU:0% TOP_MEM:0.0%(67MB) PS_MEM:0.2%(67MB) PARSING_MEM:83%(50MB) DISK:1%(2.1G)  [UFW Active] [WARNING: MEM High (관제 임계점)]
-[2026-07-18 19:59:47] [CRITICAL] 프로세스 사망. 원인: [MemoryGuard] Self-terminating process 12 to prevent system instability.
