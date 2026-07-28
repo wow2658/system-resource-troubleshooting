@@ -49,7 +49,7 @@ Agent READY
 ```
 
 ## 🚀 테스트 실행 방법 (Docker)
-로컬 Windows 환경에서 테스트를 진행하기 위해 Docker 컨테이너를 사용합니다.
+Mac/Linux 환경에서 테스트를 진행하기 위해 Docker 컨테이너를 사용합니다.
 
 1. **Docker 이미지 빌드**
    ```bash
@@ -57,10 +57,10 @@ Agent READY
    ```
 
 2. **자동화 테스트 스크립트 실행**
-   ```powershell
-   # PowerShell 기준 명령어
-   New-Item -ItemType Directory -Force -Path logs
-   docker run --rm -v "${PWD}\logs:/var/log/agent-app" -v "${PWD}\run_tests.sh:/home/agentuser/run_tests.sh" agent-tester /home/agentuser/run_tests.sh
+   ```bash
+   # Mac/Linux 기준 명령어 (권한 부여 후 실행)
+   chmod +x run_docker_tests_mac.sh
+   ./run_docker_tests_mac.sh
    ```
    > 💡 테스트 스크립트는 총 6가지 시나리오(장애 유발 전/후)를 순차적으로 실행하며 약 4~5분 정도 소요됩니다. 완료 후 `logs/` 폴더에서 결과를 확인할 수 있습니다.
 
@@ -76,11 +76,11 @@ Agent READY
 3. **Deadlock (교착 상태)**
    - **Before (`Deadlock_Before`):** 멀티스레드 옵션을 켜서(`1`) 자원 경쟁에 의한 스레드 교착 상태(무응답 멈춤)를 유발합니다. (버그 재현)
    - **After (`Deadlock_After`):** 멀티스레드 옵션을 꺼서(`0`) 엉킴을 방지하고 제한 시간 내에 정상 동작하는지 검증합니다. (해결 증명)
-## 📝 산출물 (이슈 리포트)
-테스트 결과 로그 분석을 바탕으로, GitHub Repository 제출을 위한 3개의 기술 리포트가 함께 작성되어 있습니다.
-- `1_OOM_Crash_Issue.md` : 메모리 제한 초과 강제 종료 현상 분석 및 해결
-- `2_CPU_Latency_Issue.md` : 과점유 방지 정책 스로틀링 지연 현상 분석 및 해결
-- `3_Deadlock_Issue.md` : 멀티스레드 교착상태 무응답 현상 분석 및 해결
+## 📝 산출물 (테스트 로그)
+테스트 스크립트 실행이 완료되면 `logs/` 디렉터리에 각 시나리오(장애 유발 전/후)의 검증 결과가 담긴 시스템 로그가 생성됩니다.
+- `agent_app_<Scenario>.log` : 애플리케이션 관점의 내부 동작 및 에러 원인이 기록된 로그
+- `monitor_<Scenario>.log` : 운영체제 관점의 시스템 자원(CPU, MEM, DISK 등) 상태 변화가 기록된 관제 로그
+(기존에 분리되어 있던 마크다운 이슈 리포트들은 현재 본 README에 모두 통합 정리되었습니다.)
 
 ---
 
