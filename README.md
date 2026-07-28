@@ -49,16 +49,24 @@ Agent READY
 ```
 
 ## 🚀 테스트 실행 방법 (Docker)
-Mac/Linux 환경에서 테스트를 진행하기 위해 Docker 컨테이너를 사용합니다.
+로컬 OS 환경에 맞게 컨테이너를 구동하여 자동화 테스트를 진행합니다.
 
-1. **Docker 이미지 빌드**
+1. **Docker 이미지 빌드 (공통)**
    ```bash
    docker build -t agent-tester .
    ```
 
 2. **자동화 테스트 스크립트 실행**
+
+   **💻 Windows 환경 (Docker Desktop)**
+   ```powershell
+   # PowerShell 환경에서 스크립트 실행
+   .\run_docker_tests_with_limits.ps1
+   ```
+
+   **🍎 Mac 환경 (OrbStack 권장)**
    ```bash
-   # Mac/Linux 기준 명령어 (권한 부여 후 실행)
+   # 터미널에서 스크립트 권한 부여 후 실행
    chmod +x run_docker_tests_mac.sh
    ./run_docker_tests_mac.sh
    ```
