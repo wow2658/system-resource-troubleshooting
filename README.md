@@ -67,6 +67,7 @@ Agent READY
    **🍎 Mac 환경 (OrbStack 권장)**
    ```bash
    # 터미널에서 스크립트 권한 부여 후 실행
+   # (참고: chmod +x는 Change Mode + eXecutable의 약자로, 스크립트에 실행 권한을 부여하는 명령어입니다)
    chmod +x run_docker_tests_mac.sh
    ./run_docker_tests_mac.sh
    ```
