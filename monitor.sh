@@ -271,7 +271,11 @@ if [ "$DISK_USAGE" -gt 80 ]; then WARN_MSG="$WARN_MSG [WARNING: DISK High]"; fi
     # 
     # 1. CPU 지표 3대장 (관측 주파수의 차이 증명용)
     #  - TOP_CPU     : `top -b -n 2 -d 1 -p $PID` (1초 딜레이 스냅샷) -> 찰나의 순간 속도 (0% or 100% 튐)
+    #    * top 어원 : Table of Processes (자원을 많이 먹는 상위 프로세스들의 순위표)
+    #    * 옵션 해석: -b(Batch 모드) -n 2(2회 반복) -d 1(1초 대기). 1초 동안의 찰나를 측정하는 '순간 속도계' 역할.
     #  - PS_CPU      : `ps -p $PID -o %cpu=` -> 앱 켜진 이후 누적 평균 속도 (평균의 함정으로 1~2% 고정)
+    #    * ps 어원  : Process Status (프로세스 상태)
+    #    * 옵션 해석: -o %cpu= (%cpu 항목만 출력하되 헤더는 떼고(=) 가져옴). 켜진 이후 전체 누적 사용량을 구하는 '평균 연비계' 역할.
     #  - PARSING_CPU : `grep "\[CpuWorker\]"` (앱 내부 로그 파싱) -> 앱이 의도한 진짜 부하량 (부드러운 곡선)
     #
     # 2. 메모리 지표 (실제 vs 내부)
