@@ -1,0 +1,41 @@
+2026-07-28 14:02:43,625 [INFO] [SafetyGuard] Process priority lowered (nice=10).
+>>> Starting Agent Boot Sequence...
+[1/6] Checking User Account               [OK]
+   ... Running as service user 'agentuser' (uid=1000)
+[2/6] Verifying Environment Variables     [OK]
+   ... All required Envs correct
+[3/6] Checking Required Files             [OK]
+   ... Verified 'secret.key' with correct key string.
+[4/6] Checking Port Availability          [OK]
+   ... Port 15034 is available.
+[5/6] Verifying Log Permission            [OK]
+   ... Log directory is writable: /var/log/agent-app
+[6/6] Verifying Mission Environment       [OK]
+   ... MEMORY_LIMIT=60MB, CPU_MAX_OCCUPY=40%, MULTI_THREAD_ENABLE=False
+------------------------------------------------------------
+All Boot Checks Passed!
+Agent READY
+2026-07-28 14:02:43,625 [INFO] [SafetyGuard] Process priority lowered (nice=10).
+2026-07-28 14:02:43,625 [INFO] Agent listening at port 15034
+2026-07-28 14:02:43,625 [INFO] Agent listening at port 15034
+2026-07-28 14:02:45,651 [INFO] [MemoryWorker] Current Heap: 25MB
+
+==================================================
+ [ Agent Initiate ] Resource Check 
+==================================================
+ [ MEMORY ] Limit: 60MB 		[ WARNING: Recommend Over 256MB ]
+ [ CPU    ] Limit: 40%  		[ OK ]
+ [ THREAD ] Concurrency: False 		[ OK ]
+--------------------------------------------------
+ >>> SYSTEM STATUS: STABLE. STARTING WORKLOAD MONITORING...
+==================================================
+
+2026-07-28 14:02:45,651 [INFO] [MemoryWorker] Current Heap: 25MB
+2026-07-28 14:02:48,697 [INFO] [MemoryWorker] Current Heap: 50MB
+2026-07-28 14:02:48,697 [INFO] [MemoryWorker] Current Heap: 50MB
+2026-07-28 14:02:51,733 [INFO] [MemoryWorker] Current Heap: 75MB
+2026-07-28 14:02:51,733 [INFO] [MemoryWorker] Current Heap: 75MB
+2026-07-28 14:02:51,734 [CRITICAL] [MemoryGuard] Memory limit exceeded (75MB >= 60MB) / (Recommend Over 256MB)
+2026-07-28 14:02:51,734 [CRITICAL] [MemoryGuard] Memory limit exceeded (75MB >= 60MB) / (Recommend Over 256MB)
+2026-07-28 14:02:51,734 [CRITICAL] [MemoryGuard] Self-terminating process 12 to prevent system instability.
+2026-07-28 14:02:51,734 [CRITICAL] [MemoryGuard] Self-terminating process 12 to prevent system instability.

@@ -267,6 +267,24 @@ if [ "$DISK_USAGE" -gt 80 ]; then WARN_MSG="$WARN_MSG [WARNING: DISK High]"; fi
         }
     }')
 
+    # =========================================================================
+    # 
+    # 1. CPU 지표 3대장 (관측 주파수의 차이 증명용)
+    #  - TOP_CPU     : `top -b -n 2 -d 1 -p $PID` (1초 딜레이 스냅샷) -> 찰나의 순간 속도 (0% or 100% 튐)
+    #  - PS_CPU      : `ps -p $PID -o %cpu=` -> 앱 켜진 이후 누적 평균 속도 (평균의 함정으로 1~2% 고정)
+    #  - PARSING_CPU : `grep "\[CpuWorker\]"` (앱 내부 로그 파싱) -> 앱이 의도한 진짜 부하량 (부드러운 곡선)
+    #
+    # 2. 메모리 지표 (실제 vs 내부)
+    #  - RES_MB      : `ps -p $PID -o rss=` (OS 기준 물리 메모리 사용량 KB를 MB로 변환)
+    #  - PARSING_MB  : `grep "\[MemoryWorker\]"` (앱 내부 로그 파싱) -> 앱이 생각하는 힙(Heap) 사이즈
+    #
+    # 3. 스레드 지표 (Deadlock 증명용 - ps 옵션 설명)
+    #  - THREAD_INFO : `ps -L -p $PID -o lwp,stat,wchan:15`
+    #    * -L    : 프로세스뿐만 아니라 그 안의 '스레드(LWP)' 단위까지 쪼개서 보여달라는 핵심 옵션!
+    #    * lwp   : 스레드 고유 ID 번호
+    #    * stat  : 스레드 상태 (R=Running, S=Sleeping 등)
+    #    * wchan : 스레드가 뭘 기다리느라 멈춰있는지 커널 함수명 출력 (futex=락 대기 중)
+    # =========================================================================
     SUMMARY_LINE="[$NOW] PROCESS:agent-leak-app TOP_CPU:${TOP_PROC_CPU}% PS_CPU:${PS_PROC_CPU}% PARSING_CPU:${APP_CPU_PCT}% RES_MB:${PS_PROC_RSS_MB}MB PARSING_MB:${APP_MEM_MB}MB RES_PCT:${CALC_REAL_MEM_PCT}% USER_PCT:${USER_CALC_PCT}% PARSING_PCT:${APP_MEM_PCT}% TOP_MEM:${TOP_PROC_MEM}% OS_MEM_PCT:${PS_PROC_MEM}% DISK:${DISK_USAGE}%(${DISK_USED_SIZE}) [THREADS: ${THREAD_INFO}] $WARN_MSG"
 
     if [ $is_deadlock -eq 1 ]; then
@@ -274,3 +292,34 @@ if [ "$DISK_USAGE" -gt 80 ]; then WARN_MSG="$WARN_MSG [WARNING: DISK High]"; fi
     else
         echo "$SUMMARY_LINE" >> $LOG_FILE
     fi
+    # =========================================================================
+    # [부록: 모니터링 지표 및 핵심 약어(Abbreviation) 사전]
+    # 명령어 옵션의 어원과 정확한 의미를 기재한다.
+    # 
+    # 1. 스레드(Thread) 분석 관련 약어
+    #  * LWP (Light Weight Process)
+    #    - 어원: 가벼운(Light Weight) 프로세스
+    #    - 의미: 리눅스(OS) 커널이 '스레드(Thread)'를 부르는 공식 명칭이다. 
+    #           프로세스와 스레드를 비슷하게 취급하되 좀 더 가볍다는 의미에서 유래했다.
+    #  * wchan (Waiting Channel)
+    #    - 어원: 대기(Waiting) 채널(Channel)
+    #    - 의미: 스레드가 현재 "어떤 커널 함수에 막혀서 잠들어 있는지"를 보여준다.
+    #           교착상태(Deadlock)에 빠졌을 때 원인을 찾는 1등 공신 옵션이다.
+    #  * futex (Fast Userspace Mutex)
+    #    - 어원: 빠른(Fast) 유저 공간(Userspace) 뮤텍스(Mutex - 상호 배제 잠금)
+    #    - 의미: 프로그래머가 코드에 락(Lock)을 걸 때 사용하는 기술이다. 
+    #           이 상태에 빠져 있다면 "다른 스레드가 쥐고 있는 자원이 풀리기를 하염없이 기다리는 중"이라는 뜻이다.
+    # 
+    # 2. 메모리 분석 관련 약어
+    #  * RES / RSS (Resident Set Size)
+    #    - 어원: 상주(Resident) 집합(Set) 크기(Size)
+    #    - 의미: 가상 메모리나 스왑(Swap)을 제외하고, "실제 물리적 램(RAM)에 
+    #           진짜로 할당되어 차지하고 있는 진짜 메모리 용량"을 뜻한다.
+    #           OOM 분석의 가장 핵심이 되는 지표이다.
+    # 
+    # 3. 기타 요약표 공통 약어
+    #  * PCT (Percentage): 퍼센트(%) 비중을 뜻한다. (예: OS_MEM_PCT)
+    #  * STAT (Status): 프로세스나 스레드의 현재 상태이다. 
+    #    - R (Running): 열심히 달리는(연산 중인) 상태
+    #    - S (Sleeping): 잠들어 있는(대기 중인) 상태
+    # =========================================================================

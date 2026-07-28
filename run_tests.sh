@@ -143,8 +143,8 @@ echo "Starting tests..."
 # run_scenario "CPU_Before" 512 80 0 90
 
 # 1-1. CPU Spike (After)
-# CPU 사용 제한을 40%로 낮춰 Watchdog 임계점(50%)을 회피하고 생존 확인 (60초 타임아웃)
-# run_scenario "CPU_After" 512 40 0 60
+# CPU 사용 제한을 40%로 낮춰 Watchdog 임계점(50%)을 회피하고 생존 확인 (쿨다운 2번 확인을 위해 150초 타임아웃)
+# run_scenario "CPU_After" 512 40 0 150
 
 # 2. OOM Crash (Before)
 # [시행착오 노트] CPU는 안전하게 40%로 고정하고, 오직 MEMORY_LIMIT만 60MB로 타이트하게 잡아 순수한 OOM 종료를 유도한다.
@@ -159,7 +159,7 @@ echo "Starting tests..."
 # run_scenario "Deadlock_Before" 512 40 1 60
 
 # 3-1. Deadlock (After)
-# 멀티스레드 해제(0)하여 스레드 순차 실행함으로써 데드락 회피 및 정상 동작 확인 (60초 타임아웃)
-run_scenario "Deadlock_After" 512 40 0 120
+# 멀티스레드 해제(0)하여 스레드 순차 실행함으로써 데드락 회피 및 정상 동작 확인 (150초 타임아웃)
+run_scenario "Deadlock_After" 512 40 0 150
 
 echo "All tests completed."
